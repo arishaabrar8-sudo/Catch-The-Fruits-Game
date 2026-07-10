@@ -1,31 +1,164 @@
-f["y"] = random.randint(-150, -20)
-    f["name"] = random.choice(names)
-    f["img"] = fruits[names.index(f["name"])]
+import pygame
+import random
+import sys
 
-Score text
+pygame.init()
+pygame.mixer.init()
 
-txt = font.render(f"Score: {score}", True, (0, 0, 0))
+# Background music
+pygame.mixer.music.load("/storage/emulated/0/Download/relaxing-guitar-loop-v5-245859.mp3")
+pygame.mixer.music.play(-1)
 
-screen.blit(txt, (10, 10))
+# Screen setup
+WIDTH, HEIGHT = 1500, 700
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("CATCH THE FRUITS")
 
-pygame.display.update()
+# Background
+background = pygame.image.load("/storage/emulated/0/Download/Screenshot 2025-11-13 7.59.46 PM.png")
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
-clock.tick(30)
+# Images
+apple = pygame.transform.scale(
+    pygame.image.load("/storage/emulated/0/Download/Screenshot 2025-11-12 7.15.50 PM.png"),
+    (80, 60)
+)
 
---- Game over ---
+banana = pygame.transform.scale(
+    pygame.image.load("/storage/emulated/0/Download/Screenshot 2025-11-12 7.15.14 PM.png"),
+    (80, 60)
+)
 
-p=pygame.mixer.Sound('/storage/emulated/0/Download/game-over-arcade-6435.mp3')
+mango = pygame.transform.scale(
+    pygame.image.load("/storage/emulated/0/Download/Screenshot 2025-11-12 7.16.18 PM.png"),
+    (80, 60)
+)
 
-p.play()
+basket = pygame.transform.scale(
+    pygame.image.load("/storage/emulated/0/Download/Screenshot 2025-11-12 11.25.06 PM.png"),
+    (100, 70)
+)
+
+# Sounds
+catch_sound = pygame.mixer.Sound("/storage/emulated/0/Download/game-bonus-144751.mp3")
+game_over_sound = pygame.mixer.Sound("/storage/emulated/0/Download/game-over-arcade-6435.mp3")
+
+# Basket
+basket_width, basket_height = 100, 70
+basket_x = WIDTH // 2 - basket_width // 2
+basket_y = HEIGHT - basket_height
+
+# Game variables
+score = 0
+speed = 10
+
+fruits = [apple, banana, mango]
+names = ["apple", "banana", "mango"]
+
+# Catching banana ends the game
+special = "banana"
+
+# Create five falling fruits
+falling = []
+
+for i in range(5):
+    n = random.randint(0, 2)
+    falling.append({
+        "img": fruits[n],
+        "name": names[n],
+        "x": random.randint(20, WIDTH - 80),
+        "y": random.randint(-300, -20)
+    })
+
+font = pygame.font.SysFont(None, 35)
+clock = pygame.time.Clock()
+
+running = True
+
+# ---------------- GAME LOOP ----------------
+while running:
+
+    screen.blit(background, (0, 0))
+    screen.blit(basket, (basket_x, basket_y))
+
+    # Events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    # Keyboard controls
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+        basket_x -= 8
+
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        basket_x += 8
+
+    # Keep basket inside screen
+    if basket_x < 0:
+        basket_x = 0
+    if basket_x > WIDTH - basket_width:
+        basket_x = WIDTH - basket_width
+
+    # Fruits
+    for f in falling:
+
+        f["y"] += speed
+        screen.blit(f["img"], (f["x"], f["y"]))
+
+        # Catch detection
+        if (
+            basket_y < f["y"] + 40 < basket_y + basket_height
+            and basket_x < f["x"] + 40 < basket_x + basket_width
+        ):
+
+            if f["name"] == special:
+                running = False
+
+            else:
+                score += 1
+                catch_sound.play()
+
+                f["x"] = random.randint(20, WIDTH - 80)
+                f["y"] = random.randint(-300, -20)
+
+                f["name"] = random.choice(names)
+                f["img"] = fruits[names.index(f["name"])]
+
+        # Fruit missed
+        if f["y"] > HEIGHT:
+
+            f["x"] = random.randint(20, WIDTH - 80)
+            f["y"] = random.randint(-300, -20)
+
+            f["name"] = random.choice(names)
+            f["img"] = fruits[names.index(f["name"])]
+
+    # Score
+    txt = font.render(f"Score: {score}", True, (0, 0, 0))
+    screen.blit(txt, (10, 10))
+
+    pygame.display.update()
+    clock.tick(30)
+
+# ---------------- GAME OVER ----------------
+
+pygame.mixer.music.stop()
+game_over_sound.play()
 
 screen.fill((255, 255, 255))
 
-msg = font.render(f"You caught the {special}! Game Over!Your score is:{score}", True, (255, 0, 0))
+msg = font.render(
+    f"You caught the {special}! Game Over! Score: {score}",
+    True,
+    (255, 0, 0)
+)
 
-screen.blit(msg, (120, HEIGHT//2))
+screen.blit(msg, (150, HEIGHT // 2))
 
 pygame.display.update()
-
 pygame.time.wait(3000)
 
 pygame.quit()
